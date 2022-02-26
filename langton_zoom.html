@@ -241,9 +241,7 @@
       let antHead = document.getElementById('ant-head');
       antHead.style.top = `${antR * cellSize}px`;
       antHead.style.left = `${antC * cellSize}px`;
-      setTimeout(() => {
-        transitionToNextState();
-      }, speed);
+      transitionToNextState();
     }
 
     function transitionToNextState() {
