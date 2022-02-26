@@ -10,8 +10,8 @@ mp_pose = mp.solutions.pose
 
 
 # Window size
-frame_size_x = 1080
-frame_size_y = 720
+frame_size_x = 720
+frame_size_y = 1080
 
 # Checks for errors encountered
 check_errors = pygame.init()
@@ -32,7 +32,7 @@ game_window = pygame.display.set_mode((frame_size_x, frame_size_y))
 
 # Colors (R, G, B)
 black = pygame.Color(0, 0, 0)
-white = pygame.Color(255, 255, 255)
+default_color = pygame.Color(0, 255, 0)
 grey = pygame.Color(128, 128, 128)
 
 previous_frames = []
@@ -41,10 +41,12 @@ max_prev_frames = 10
 # FPS (frames per second) controller
 fps_controller = pygame.time.Clock()
 
+
 def get_random_color():
     return (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
-def mark_landmark(landmark_data, size=10, color=white):
+
+def mark_landmark(landmark_data, size=10, color=default_color):
     landmark_x = frame_size_x - int(landmark_data.x * frame_size_x)
     landmark_y = int(landmark_data.y * frame_size_y)
     landmark_z = 1  # landmark_data.z
@@ -52,7 +54,7 @@ def mark_landmark(landmark_data, size=10, color=white):
                        landmark_x, landmark_y], size*landmark_z)
 
 
-def line_between_landmarks(landmark_data_1, landmark_data_2, size=20, color=white):
+def line_between_landmarks(landmark_data_1, landmark_data_2, size=20, color=default_color):
     landmark_1_x = frame_size_x - int(landmark_data_1.x * frame_size_x)
     landmark_1_y = int(landmark_data_1.y * frame_size_y)
     landmark_2_x = frame_size_x - int(landmark_data_2.x * frame_size_x)
@@ -61,7 +63,7 @@ def line_between_landmarks(landmark_data_1, landmark_data_2, size=20, color=whit
         landmark_2_x, landmark_2_y], size)
 
 
-def mark_between_landmarks(landmark_data_1, landmark_data_2, size=10, color=white):
+def mark_between_landmarks(landmark_data_1, landmark_data_2, size=10, color=default_color):
     landmark_1_x = frame_size_x - int(landmark_data_1.x * frame_size_x)
     landmark_1_y = int(landmark_data_1.y * frame_size_y)
     landmark_2_x = frame_size_x - int(landmark_data_2.x * frame_size_x)
@@ -71,7 +73,7 @@ def mark_between_landmarks(landmark_data_1, landmark_data_2, size=10, color=whit
                        (landmark_1_x + landmark_2_x)/2, (landmark_1_y + landmark_2_y)/2], size)
 
 
-def draw_neck(nose_data, left_shoulder_data, right_shoulder_data, color=white):
+def draw_neck(nose_data, left_shoulder_data, right_shoulder_data, color=default_color):
     nose_x = frame_size_x - int(nose_data.x * frame_size_x)
     nose_y = int(nose_data.y * frame_size_y)
     left_shoulder_x = frame_size_x - int(left_shoulder_data.x * frame_size_x)
@@ -83,7 +85,7 @@ def draw_neck(nose_data, left_shoulder_data, right_shoulder_data, color=white):
         (left_shoulder_x + right_shoulder_x)/2, (left_shoulder_y + right_shoulder_y)/2], 5)
 
 
-def draw_pp(left_hip_data, right_hip_data, color=white):
+def draw_pp(left_hip_data, right_hip_data, color=default_color):
     left_hip_x = frame_size_x - int(left_hip_data.x * frame_size_x)
     left_hip_y = int(left_hip_data.y * frame_size_y)
     left_hip_visibility = left_hip_data.visibility
@@ -99,7 +101,25 @@ def draw_pp(left_hip_data, right_hip_data, color=white):
         pp_dir = frame_size_x/5
 
     if (abs(left_hip_x - right_hip_x) < frame_size_x/20):
-        pygame.draw.line(game_window, color, [pp_x, pp_y], [pp_x + pp_dir, pp_y], 15)
+        pygame.draw.line(game_window, color, [pp_x, pp_y], [
+                         pp_x + pp_dir, pp_y], 15)
+
+
+def draw_button(x, y, radius, color=default_color):
+    x = frame_size_x - int(x * frame_size_x)
+    y = int(y * frame_size_y)
+    pygame.draw.circle(game_window, color, [x, y], radius)
+
+
+def draw_buttons():
+    # Draw buttons
+    draw_button(0.5, 0.1, 50, grey)
+
+
+def is_circle_circle_collision(circle_1, circle_2):
+    distance = np.sqrt((circle_1.x - circle_2.x)**2 +
+                       (circle_1.y - circle_2.y)**2)
+    return distance < (circle_1.radius + circle_2.radius)
 
 
 # For webcam input:
@@ -170,18 +190,24 @@ with mp_pose.Pose(
             # draw trails
             for i in range(max_prev_frames):
                 if (i < len(previous_frames)):
-                    trail_color_value = 255 - ((255//max_prev_frames) * (max_prev_frames - i))
+                    trail_color_value = 255 - \
+                        ((255//max_prev_frames) * (max_prev_frames - i))
                     trail_color = (0, trail_color_value, 0)
                     current_trail = previous_frames[i]
 
-                    mark_landmark(current_trail.get('right_wrist_data'), color=trail_color)
-                    mark_landmark(current_trail.get('left_wrist_data'), color=trail_color)
-                    mark_landmark(current_trail.get('left_hip_data'), color=trail_color)
-                    mark_landmark(current_trail.get('right_hip_data'), color=trail_color)
+                    mark_landmark(current_trail.get(
+                        'right_wrist_data'), color=trail_color)
+                    mark_landmark(current_trail.get(
+                        'left_wrist_data'), color=trail_color)
 
-                    line_between_landmarks(current_trail.get('left_hip_data'), current_trail.get('right_hip_data'))
-                    line_between_landmarks(right_elbow_data, current_trail.get('right_wrist_data'), color=trail_color)
-                    line_between_landmarks(left_elbow_data, current_trail.get('left_wrist_data'), color=trail_color)
+                    line_between_landmarks(current_trail.get('right_shoulder_data'), current_trail.get(
+                        'right_elbow_data'), color=trail_color)
+                    line_between_landmarks(current_trail.get('left_shoulder_data'), current_trail.get(
+                        'left_elbow_data'), color=trail_color)
+                    line_between_landmarks(current_trail.get('right_elbow_data'), current_trail.get(
+                        'right_wrist_data'), color=trail_color)
+                    line_between_landmarks(current_trail.get('left_elbow_data'), current_trail.get(
+                        'left_wrist_data'), color=trail_color)
 
             # mark landmarks
             mark_landmark(nose_data, 50)

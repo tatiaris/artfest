@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Langton's Ant</title>
+  <style>
+    * {
+      --cell-size: 500px;
+      --border-radius: 50%;
+      transition: 5000ms;
+    }
+    
+    body {
+      margin: 0px !important;
+      background-color: black;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    .sim-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .langton-grid-container {
+      position: relative;
+    }
+    
+    .langton-grid-row {
+      display: flex;
+    }
+    
+    .langton-cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+    }
+    
+    #ant-head {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      position: absolute;
+      background-color: yellow;
+    }
+    
+    #ant-head.dir-0 {
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+    }
+    
+    #ant-head.dir-1 {
+      border-top-right-radius: var(--border-radius);
+      border-bottom-right-radius: var(--border-radius);
+    }
+    
+    #ant-head.dir-2 {
+      border-bottom-left-radius: var(--border-radius);
+      border-bottom-right-radius: var(--border-radius);
+    }
+    
+    #ant-head.dir-3 {
+      border-top-left-radius: var(--border-radius);
+      border-bottom-left-radius: var(--border-radius);
+    }
+    
+    .langton-cell.alive {
+      background-color: forestgreen;
+    }
+    
+    .langton-cell.dead {
+      background-color: #6e4800;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sim-container">
+    <div class="langton-grid-container">
+      <div id="ant-head" style="top: 0px; left: 0px"></div>
+    </div>
+  </div>
+  <script>
+    let docElem = document.documentElement;
+
+    function openFullscreen() {
+      if (docElem.requestFullscreen) {
+        docElem.requestFullscreen();
+      } else if (docElem.webkitRequestFullscreen) { /* Safari */
+        docElem.webkitRequestFullscreen();
+      } else if (docElem.msRequestFullscreen) { /* IE11 */
+        docElem.msRequestFullscreen();
+      }
+    }
+
+    let isRunning = true;
+    let speed = 5000;
+    let isFullscreen = false;
+    let cellSize = 500;
+    let scale = 1;
+    let scaleRatio = 0.75;
+    let rowLength = Math.floor(innerHeight / cellSize);
+    let colLength = Math.floor(innerWidth / cellSize);
+    let antR = Math.floor(rowLength / 2);
+    let antC = Math.floor(colLength / 2);
+    let antDirection = 0;
+
+    function createGrid() {
+      let grid = document.querySelector('.langton-grid-container');
+      for (let i = 0; i < rowLength; i++) {
+        let row = document.createElement('div');
+        row.classList.add('langton-grid-row');
+        for (let j = 0; j < colLength; j++) {
+          let cell = document.createElement('div');
+          cell.id = `cell-${i}-${j}`;
+          cell.classList.add('langton-cell');
+          row.appendChild(cell);
+        }
+        grid.appendChild(row);
+      }
+    }
+
+    function placeAnt() {
+      let antHead = document.getElementById('ant-head');
+      antHead.classList.add(`dir-${antDirection}`);
+      antHead.style.top = `${antR * cellSize}px`;
+      antHead.style.left = `${antC * cellSize}px`;
+    }
+
+    /**
+     * @param {number} k = 1 or 3. 1 for left, 3 for right
+     */
+    function turnAnt(k) {
+      let antHead = document.getElementById('ant-head');
+      antHead.classList.remove(`dir-${antDirection}`);
+      antDirection = (antDirection + k) % 4;
+      antHead.classList.add(`dir-${antDirection}`);
+      setTimeout(() => {
+        paintCell();
+      }, speed);
+    }
+
+    function paintCell() {
+      let cell = document.getElementById(`cell-${antR}-${antC}`);
+      if (cell.classList.contains('alive')) {
+        cell.classList.remove('alive');
+        cell.classList.add('dead');
+      } else {
+        cell.classList.remove('dead');
+        cell.classList.add('alive');
+      }
+      setTimeout(() => {
+        moveForward();
+      }, speed);
+    }
+
+    function makeGridLarger() {
+      let newScale = scale * scaleRatio;
+      let newCellSize = Math.floor(cellSize * newScale);
+      let newRowLength = Math.floor(innerHeight / newCellSize);
+      let newColLength = Math.floor(innerWidth / newCellSize);
+      let addedCols = newColLength - colLength;
+      let addedRows = newRowLength - rowLength;
+
+      let grid = document.querySelector('.langton-grid-container');
+      for (let i = rowLength - 1; i >= 0; i--) {
+        for (let j = colLength - 1; j >= 0; j--) {
+          let cell = document.getElementById(`cell-${i}-${j}`);
+          cell.id = `cell-${i + Math.floor(addedRows/2)}-${j + Math.floor(addedCols/2)}`;
+        }
+      }
+      // add new rows on top
+      for (let i = Math.floor(addedRows / 2) - 1; i >= 0; i--) {
+        let row = document.createElement('div');
+        row.classList.add('langton-grid-row');
+        for (let j = 0; j < colLength; j++) {
+          let cell = document.createElement('div');
+          cell.id = `cell-${i}-${j + Math.floor(addedCols/2)}`;
+          cell.classList.add('langton-cell');
+          row.appendChild(cell);
+        }
+        grid.insertBefore(row, grid.firstChild);
+      }
+      // add new rows on bottom
+      for (let i = newRowLength - Math.round(addedRows / 2); i < newRowLength; i++) {
+        let row = document.createElement('div');
+        row.classList.add('langton-grid-row');
+        for (let j = 0; j < colLength; j++) {
+          let cell = document.createElement('div');
+          cell.id = `cell-${i}-${j + Math.floor(addedCols/2)}`;
+          cell.classList.add('langton-cell');
+          row.appendChild(cell);
+        }
+        grid.appendChild(row)
+      }
+      // add new columns on left and right
+      let rows = document.querySelectorAll('.langton-grid-row');
+      for (let i = 0; i < rows.length; i++) {
+        let curRow = rows[i];
+        for (let j = Math.floor(addedCols / 2) - 1; j >= 0; j--) {
+          let cell = document.createElement('div');
+          cell.id = `cell-${i}-${j}`;
+          cell.classList.add('langton-cell');
+          curRow.insertBefore(cell, curRow.firstChild);
+        }
+        for (let j = colLength + Math.floor(addedCols / 2); j < newColLength; j++) {
+          let cell = document.createElement('div');
+          cell.id = `cell-${i}-${j}`;
+          cell.classList.add('langton-cell');
+          curRow.appendChild(cell);
+        }
+      }
+      let simContainer = document.querySelector('.sim-container');
+      simContainer.style.setProperty('-moz-transform', `scale(${newScale*0.95}, ${newScale*0.95})`);
+      simContainer.style.setProperty('zoom', `${newScale*0.95}`);
+      simContainer.style.setProperty('zoom', `${newScale*0.95*100}%`);
+      rowLength = newRowLength;
+      colLength = newColLength;
+      scale = newScale;
+      antR += Math.floor(addedRows / 2);
+      antC += Math.floor(addedCols / 2);
+    }
+
+    function moveForward() {
+      if (antDirection == 0) {
+        antR--;
+      } else if (antDirection == 1) {
+        antC++;
+      } else if (antDirection == 2) {
+        antR++;
+      } else if (antDirection == 3) {
+        antC--;
+      }
+      if (antR < 0 || antR >= rowLength || antC < 0 || antC >= colLength) {
+        makeGridLarger();
+      }
+      let antHead = document.getElementById('ant-head');
+      antHead.style.top = `${antR * cellSize}px`;
+      antHead.style.left = `${antC * cellSize}px`;
+      setTimeout(() => {
+        transitionToNextState();
+      }, speed);
+    }
+
+    function transitionToNextState() {
+      let cell = document.getElementById(`cell-${antR}-${antC}`);
+      if (cell.classList.contains('alive')) {
+        setTimeout(() => {
+          turnAnt(3);
+        }, speed);
+      } else {
+        setTimeout(() => {
+          turnAnt(1);
+        }, speed);
+      }
+    }
+
+    function run() {
+      if (isRunning) {
+        transitionToNextState();
+      }
+    }
+
+    function logKey(e) {
+      if (e.key == 'f') {
+        openFullscreen();
+      }
+      if (e.keyCode == 32) {
+        createGrid();
+        placeAnt();
+        run();
+      }
+    }
+
+    document.addEventListener('keypress', logKey);
+  </script>
+</body>
+
+</html>
