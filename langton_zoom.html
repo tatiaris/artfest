@@ -10,12 +10,13 @@
     * {
       --cell-size: 500px;
       --border-radius: 50%;
-      transition: 5000ms;
+      transition: 10000ms;
+      scrollbar-width: none;
     }
     
     body {
       margin: 0px !important;
-      background-color: black;
+      background-color: rgb(250, 210, 123);
       width: 100vw;
       height: 100vh;
     }
@@ -46,6 +47,7 @@
       height: var(--cell-size);
       position: absolute;
       background-color: yellow;
+      display: none;
     }
     
     #ant-head.dir-0 {
@@ -69,11 +71,11 @@
     }
     
     .langton-cell.alive {
-      background-color: forestgreen;
+      background-color: rgb(17, 70, 17);
     }
     
     .langton-cell.dead {
-      background-color: #6e4800;
+      background-color: #472d00;
     }
   </style>
 </head>
@@ -98,7 +100,7 @@
     }
 
     let isRunning = true;
-    let speed = 5000;
+    let speed = 1000;
     let isFullscreen = false;
     let cellSize = 500;
     let scale = 1;
