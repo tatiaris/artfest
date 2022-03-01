@@ -8,9 +8,9 @@
   <title>Langton's Ant</title>
   <style>
     * {
-      --cell-size: 500px;
+      --cell-size: 400px;
       --border-radius: 50%;
-      transition: 10000ms;
+      transition: 1000ms;
       scrollbar-width: none;
     }
     
@@ -100,11 +100,10 @@
     }
 
     let isRunning = true;
-    let speed = 1000;
+    let speed = 100;
     let isFullscreen = false;
-    let cellSize = 500;
+    let cellSize = 400;
     let scale = 1;
-    let scaleRatio = 0.75;
     let rowLength = Math.floor(innerHeight / cellSize);
     let colLength = Math.floor(innerWidth / cellSize);
     let antR = Math.floor(rowLength / 2);
@@ -161,12 +160,11 @@
     }
 
     function makeGridLarger() {
-      let newScale = scale * scaleRatio;
-      let newCellSize = Math.floor(cellSize * newScale);
-      let newRowLength = Math.floor(innerHeight / newCellSize);
-      let newColLength = Math.floor(innerWidth / newCellSize);
+      let newRowLength = rowLength + 2;
+      let newColLength = colLength + 2;
       let addedCols = newColLength - colLength;
       let addedRows = newRowLength - rowLength;
+      let newScale = scale * ((colLength - 2) / (newColLength - 2));
 
       let grid = document.querySelector('.langton-grid-container');
       for (let i = rowLength - 1; i >= 0; i--) {
@@ -217,9 +215,9 @@
         }
       }
       let simContainer = document.querySelector('.sim-container');
-      simContainer.style.setProperty('-moz-transform', `scale(${newScale*0.95}, ${newScale*0.95})`);
-      simContainer.style.setProperty('zoom', `${newScale*0.95}`);
-      simContainer.style.setProperty('zoom', `${newScale*0.95*100}%`);
+      simContainer.style.setProperty('-moz-transform', `scale(${newScale}, ${newScale})`);
+      simContainer.style.setProperty('zoom', `${newScale}`);
+      simContainer.style.setProperty('zoom', `${newScale*100}%`);
       rowLength = newRowLength;
       colLength = newColLength;
       scale = newScale;
@@ -269,14 +267,17 @@
       if (e.key == 'f') {
         openFullscreen();
       }
-      if (e.keyCode == 32) {
-        createGrid();
-        placeAnt();
-        run();
-      }
+      // if (e.keyCode == 32) {
+      //   createGrid();
+      //   placeAnt();
+      //   run();
+      // }
     }
 
     document.addEventListener('keypress', logKey);
+    createGrid();
+    placeAnt();
+    run();
   </script>
 </body>
 
